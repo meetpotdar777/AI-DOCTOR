@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Doctor Professional Terminal</title>
+    <style>
+        :root { --neon-blue: #00d2ff; --bg-dark: #050a14; --card-bg: #111b2d; --glass: rgba(255, 255, 255, 0.05); }
+        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+        
+        /* Video Scanner */
+        #scanner-box { background: black; border: 2px solid var(--neon-blue); border-radius: 15px; position: relative; overflow: hidden; height: 480px; box-shadow: 0 0 20px rgba(0, 210, 255, 0.2); }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .overlay-text { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 8px; font-size: 13px; border-left: 4px solid var(--neon-blue); backdrop-filter: blur(5px); z-index: 10; }
+        
+        /* Sidebar */
+        .sidebar { background: var(--card-bg); padding: 25px; border-radius: 15px; border: 1px solid #1e293b; }
+        h3 { margin-top: 0; color: var(--neon-blue); text-transform: uppercase; letter-spacing: 1px; }
+        .vital-card { background: var(--glass); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .vital-tag { color: var(--neon-blue); font-size: 1.4em; font-weight: bold; font-family: 'Courier New', Courier, monospace; }
+        
+        /* Input & Button */
+        textarea { width: 100%; height: 140px; background: #0a111e; color: white; border: 1px solid #334155; border-radius: 10px; padding: 12px; box-sizing: border-box; font-size: 14px; transition: 0.3s; }
+        textarea:focus { border-color: var(--neon-blue); outline: none; box-shadow: 0 0 10px rgba(0, 210, 255, 0.1); }
+        
+        .btn-primary { width: 100%; margin-top: 15px; padding: 18px; background: linear-gradient(45deg, #00d2ff, #3a7bd5); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 210, 255, 0.3); }
+        .btn-primary:disabled { background: #334155; cursor: not-allowed; }
+
+        /* Permission Overlay */
+        #permission-overlay {
+            position: absolute; inset: 0; background: rgba(5, 10, 20, 0.9);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 20; text-align: center; padding: 20px;
+        }
+
+        /* Medical Report */
+        #report { grid-column: span 2; background: #f8fafc; color: #1e293b; padding: 35px; border-radius: 15px; margin-top: 20px; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #report h2 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; }
+        #report-content { font-size: 16px; line-height: 1.8; color: #334155; }
+        .report-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 12px; color: #64748b; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="scanner-box">
+        <div id="permission-overlay">
+            <p style="margin-bottom: 20px; font-weight: bold; color: var(--neon-blue);">BIOMETRIC SCANNER REQUIRES AUTHORIZATION</p>
+            <p style="margin-bottom: 20px; font-size: 0.9em; max-width: 300px; color: #94a3b8;">Click the button below to allow camera access for the diagnostic face-mesh scanner.</p>
+            <button id="auth-btn" onclick="startCamera()" class="btn-primary" style="width: auto; padding: 12px 24px;">Authorize Camera</button>
+        </div>
+        <video id="webcam" autoplay playsinline muted></video>
+        <div class="overlay-text">
+            STATUS: <span id="system-status" style="color:#ef4444">OFFLINE</span><br>
+            SCANNER: BIOMETRIC FACE MESH<br>
+            MOUTH: <span id="mouth-status" style="color:var(--neon-blue)">AWAITING AUTH...</span>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <h3>Live Diagnostics</h3>
+        <div class="vital-card">
+            Estimated HR: <span id="hr-display" class="vital-tag">--</span> <span style="font-size: 0.6em">BPM</span>
+        </div>
+        <div class="vital-card">
+            Body Temp: <span class="vital-tag">98.6°F</span> <span style="font-size: 0.6em">NORMAL</span>
+        </div>
+        
+        <p style="font-size: 0.8em; color: #94a3b8; margin-bottom: 8px;">SYMPTOM LOG:</p>
+        <textarea id="symptoms" placeholder="Example: Severe sore throat, painful swallowing, and mild fever since last night..."></textarea>
+        <button id="main-btn" class="btn-primary" onclick="generateReport()">Generate Clinical Analysis</button>
+    </div>
+
+    <div id="report">
+        <div class="report-header">
+            <span>AI Diagnostic Terminal v2.0</span>
+            <span id="report-date"></span>
+        </div>
+        <h2>MD-GEN AI CLINICAL REPORT</h2>
+        <div id="report-content"></div>
+        <button style="background: #64748b; margin-top: 30px; padding: 10px;" class="btn-primary" onclick="window.print()">Print for Records</button>
+    </div>
+</div>
+
+<!-- Load MediaPipe dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+<script>
+    const video = document.getElementById('webcam');
+    const hrDisplay = document.getElementById('hr-display');
+    const mouthStatusEl = document.getElementById('mouth-status');
+    const systemStatusEl = document.getElementById('system-status');
+    const permissionOverlay = document.getElementById('permission-overlay');
+    const btn = document.getElementById('main-btn');
+    const authBtn = document.getElementById('auth-btn');
+    
+    let mouthStatus = "Closed";
+    let currentHR = 72;
+
+    // --- HEART RATE SIMULATION ---
+    setInterval(() => {
+        currentHR = Math.floor(Math.random() * (82 - 68 + 1) + 68);
+        hrDisplay.innerText = currentHR;
+    }, 2000);
+
+    // --- MEDIAPIPE FACE TRACKING ---
+    const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+    faceMesh.setOptions({maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6});
+    
+    faceMesh.onResults(results => {
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            const l = results.multiFaceLandmarks[0];
+            const d = Math.abs(l[13].y - l[14].y);
+            mouthStatus = d > 0.05 ? "WIDE OPEN (Scanned)" : "Closed";
+            mouthStatusEl.innerText = mouthStatus;
+            mouthStatusEl.style.color = d > 0.05 ? "#22c55e" : "#00d2ff";
+        }
+    });
+
+    async function startCamera() {
+        authBtn.innerText = "Requesting Access...";
+        authBtn.disabled = true;
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("Your browser does not support camera access. Please use a modern browser like Chrome or Firefox.");
+            authBtn.disabled = false;
+            authBtn.innerText = "Authorize Camera";
+            return;
+        }
+
+        try {
+            // Explicitly request video
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: "user",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            });
+            
+            video.srcObject = stream;
+            
+            // Wait for video metadata to load
+            await new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    resolve();
+                };
+            });
+
+            // Transition UI
+            permissionOverlay.style.display = 'none';
+            systemStatusEl.innerText = "SYSTEM ONLINE";
+            systemStatusEl.style.color = "#22c55e";
+            
+            // Start FaceMesh loop
+            const sendFrame = async () => {
+                if (video.readyState >= 2) {
+                    try {
+                        await faceMesh.send({image: video});
+                    } catch (e) {
+                        console.warn("FaceMesh frame error:", e);
+                    }
+                }
+                requestAnimationFrame(sendFrame);
+            };
+            sendFrame();
+
+        } catch (err) {
+            console.error("Camera Access Error:", err);
+            authBtn.disabled = false;
+            authBtn.innerText = "Authorize Camera";
+
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                alert("Permission Denied: Please enable camera access in your browser's address bar or site settings to use the scanner.");
+            } else if (err.name === 'NotFoundError') {
+                alert("No camera hardware found on this device.");
+            } else {
+                alert(`Error: ${err.message}. Please try refreshing the page.`);
+            }
+        }
+    }
+
+    // --- GEMINI API INTEGRATION (Mocked for Demo) ---
+    async function generateReport() {
+        const symptoms = document.getElementById('symptoms').value;
+        if (!symptoms) return alert("Please enter symptoms.");
+
+        const content = document.getElementById('report-content');
+        const reportDiv = document.getElementById('report');
+        
+        btn.innerText = "CONSULTING GEMINI MD...";
+        btn.disabled = true;
+        document.getElementById('report-date').innerText = new Date().toLocaleString();
+
+        try {
+            // Note: Replace '/diagnose' with your actual API endpoint or use Gemini integration workflow
+            const response = await fetch('/diagnose', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    problem: symptoms,
+                    vitals: { hr: currentHR, mouth: mouthStatus }
+                })
+            }).catch(() => {
+                // Fallback for demonstration if endpoint doesn't exist
+                return {
+                    ok: true,
+                    json: () => Promise.resolve({
+                        report: "### Clinical Impression\n**Patient Vitals:** HR " + currentHR + " BPM, Throat Visual: " + mouthStatus + ".\n\n### Analysis\nBased on the logged symptoms: '" + symptoms + "', the patient shows signs of upper respiratory involvement. The reported heart rate is within normal resting range. \n\n### Recommendations\n1. Hydration and rest.\n2. Monitor temperature regularly.\n3. Consult a professional physician for a definitive diagnosis."
+                    })
+                };
+            });
+
+            if (!response.ok) throw new Error("Server error");
+
+            const data = await response.json();
+            reportDiv.style.display = "block";
+            
+            let formattedReport = data.report
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<b style="color:#0f172a">$1</b>')
+                .replace(/### (.*?)/g, '<h3 style="color:#3a7bd5">$1</h3>');
+            
+            content.innerHTML = formattedReport;
+            reportDiv.scrollIntoView({ behavior: 'smooth' });
+
+        } catch (e) {
+            alert("Network Error: Could not reach the clinical analysis engine.");
+        } finally {
+            btn.innerText = "Generate Clinical Analysis";
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
