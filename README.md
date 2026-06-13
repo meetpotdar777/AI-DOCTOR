@@ -30,7 +30,7 @@ AI-DOCTOR is a next-generation telemedicine application that combines real-time 
 
 ## 📋 Prerequisites
 
-Ensure your environment meets the following requirements before installation:
+* Ensure your environment meets the following requirements before installation: *
 * Python 3.9 or higher
 * Modern web browser with camera permissions enabled (Chrome, Firefox, Edge)
 * A valid Google Gemini API Key
@@ -44,32 +44,30 @@ Ensure your environment meets the following requirements before installation:
    ```bash
    git clone [https://github.com/meetpotdar777/AI-DOCTOR.git](https://github.com/meetpotdar777/AI-DOCTOR.git)
    cd AI-DOCTOR
-
+   ```
 2. **Set Up a Virtual Environment**
+### ◘ Windows
 
-### Windows
+  ```bash
+  python -m venv venv
+  .\venv\Scripts\activate
+  ```
+### ◘ macOS/Linux
 
-```bash
-python -m venv venv
-.\venv\Scripts\activate
-```
-
-### macOS/Linux
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
 3. **Install Dependencies**
 
-```bash
-pip install flask opencv-python numpy google-genai mediapipe
-```
+  ```bash
+  pip install flask opencv-python numpy google-genai mediapipe
+  ```
 
 4. **Project Structure Configuration**
 
-Ensure your local project directory structure matches the layout below:
+  * Ensure your local project directory structure matches the layout below:*
+   
 ```bash
 AI-DOCTOR/
 ├── app.py
@@ -80,9 +78,10 @@ AI-DOCTOR/
 
 5. **Configure Environment Security**
    
-⚠️ CRITICAL SECURITY NOTE: Never hardcode your API key inside app.py. It is highly recommended to update your script to read from environment variables (os.environ.get()).
+* ⚠️ **CRITICAL SECURITY NOTE:** Never hardcode your API key inside app.py. It is highly recommended to update your script to read from environment variables (os.environ.get()).
 
-To set your API key in your terminal session:
+*To set your API key in your terminal session:*
+
 ```bash
 # Windows (CMD)
 set GEMINI_API_KEY="your_api_key_here"
@@ -95,22 +94,26 @@ export GEMINI_API_KEY="your_api_key_here"
 ```
 
 6. **Run the Application**
+
 ```bash
 python app.py
 ```
-Open your browser and navigate to http://127.0.0.1:5000/.
+*Open your browser and navigate to http://127.0.0.1:5000/.*
 
 ---
 
 ## 🩺 Diagnostic Workflow
-1. Biometric Authorization: Upon load, authorize the browser to access your camera. The terminal status will change to SYSTEM ONLINE.
-2.Physical Scan: The scanner tracks your face structure. Open your mouth wide to watch the tracking state switch from Closed to WIDE OPEN (Scanned) in real-time.
-3.Symptom Logging: Input patient presentation details (e.g., "Throat pain, fever, and coughing for two days").
-4.Clinical Processing: Click Generate Clinical Analysis. The interface compiles your simulated heart rate, visual oral examination metadata, and text parameters before parsing them through Gemini.
-5.Report Presentation: A clean, printable clinical medical profile populates on-screen.
+
+* **Biometric Authorization:** Upon load, authorize the browser to access your camera. The terminal status will change to SYSTEM ONLINE.
+* **Physical Scan:** The scanner tracks your face structure. Open your mouth wide to watch the tracking state switch from Closed to WIDE OPEN (Scanned) in real-time.
+* **Symptom Logging:** Input patient presentation details (e.g., "Throat pain, fever, and coughing for two days").
+* **Clinical Processing:** Click Generate Clinical Analysis. The interface compiles your simulated heart rate, visual oral examination metadata, and text parameters before parsing them through Gemini.
+* **Report Presentation:** A clean, printable clinical medical profile populates on-screen.
 
 ---
 
 ## ⚖️ Disclaimer
 
 This application is an AI-assisted experimental triage prototype intended strictly for educational and demonstration purposes. It does not provide real medical advice, diagnosis, or treatment. Always consult a certified healthcare professional for medical concerns.
+
+---
