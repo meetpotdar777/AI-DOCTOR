@@ -41,10 +41,10 @@ AI-DOCTOR is a next-generation telemedicine application that combines real-time 
 
 1. **Clone the Repository**
 
-   ```bash
+  ```bash
    git clone [https://github.com/meetpotdar777/AI-DOCTOR.git](https://github.com/meetpotdar777/AI-DOCTOR.git)
    cd AI-DOCTOR
-   ```
+  ```
 2. **Set Up a Virtual Environment**
 ### ◘ Windows
 
